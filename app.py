@@ -2,10 +2,10 @@
 app.py  —  Entry Point ของระบบบริหารจัดการห้องสมุด
 =====================================================
 ไฟล์นี้เป็น Streamlit UI หลัก ประกอบด้วย 4 หน้า:
-    📚 หน้าแรก  — แสดงรายการหนังสือทั้งหมด + Sort
-    ➕ เพิ่มหนังสือ — ฟอร์มกรอกข้อมูล
-    ✏️ แก้ไข / ลบ — เลือกและแก้ไข/ลบหนังสือ
-    🔍 ค้นหา    — ค้นหาด้วย ISBN หรือชื่อหนังสือ
+    หน้าแรก      — แสดงรายการหนังสือทั้งหมด + Sort
+    เพิ่มหนังสือ  — ฟอร์มกรอกข้อมูล
+    แก้ไข / ลบ   — เลือกและแก้ไข/ลบหนังสือ
+    ค้นหา        — ค้นหาด้วย ISBN หรือชื่อหนังสือ
 
 วิธีรัน:
     streamlit run app.py
@@ -23,7 +23,7 @@ from algorithms.searching import binary_search, sequential_search
 # ===== Page Config =====
 st.set_page_config(
     page_title="ระบบบริหารจัดการห้องสมุด",
-    page_icon="📚",
+    page_icon="book",
     layout="wide",
 )
 
@@ -41,8 +41,8 @@ manager: BookManager = st.session_state.manager
 def smart_sort(books: list, key: str, reverse: bool) -> list:
     """
     เลือก Algorithm ตาม PRD Section 4.2:
-        - < 10 เล่ม  → Insertion Sort
-        - ≥ 10 เล่ม  → Merge Sort
+        - < 10 เล่ม  -> Insertion Sort
+        - >= 10 เล่ม -> Merge Sort
 
     Args:
         books   (list): List ของ dict หนังสือ
@@ -50,7 +50,7 @@ def smart_sort(books: list, key: str, reverse: bool) -> list:
         reverse (bool): True = มากไปน้อย
 
     Returns:
-        list: List หนังสือที่เรียงแล้ว + ชื่อ algorithm ที่ใช้
+        tuple: (List หนังสือที่เรียงแล้ว, ชื่อ algorithm ที่ใช้)
     """
     count = len(books)
     if count < 10:
@@ -83,13 +83,13 @@ def get_books_sorted_by_isbn() -> list:
 # ==================  SIDEBAR  =====================
 # ===================================================
 
-st.sidebar.title("📚 ห้องสมุด")
+st.sidebar.title("ห้องสมุด")
 st.sidebar.markdown("---")
 
 # เมนูนำทาง
 page = st.sidebar.radio(
     "เมนู",
-    options=["📚 หน้าแรก", "➕ เพิ่มหนังสือ", "✏️ แก้ไข / ลบ", "🔍 ค้นหา"],
+    options=["หน้าแรก", "เพิ่มหนังสือ", "แก้ไข / ลบ", "ค้นหา"],
     label_visibility="collapsed",
 )
 
@@ -102,8 +102,8 @@ st.sidebar.metric("หนังสือในระบบ", manager.get_count()
 # ============  PAGE 1: หน้าแรก (แสดงทั้งหมด)  ======
 # ===================================================
 
-if page == "📚 หน้าแรก":
-    st.title("📚 รายการหนังสือทั้งหมด")
+if page == "หน้าแรก":
+    st.title("รายการหนังสือทั้งหมด")
 
     all_books = manager.get_all()
 
@@ -112,7 +112,7 @@ if page == "📚 หน้าแรก":
         st.info("ยังไม่มีหนังสือในระบบ — กรุณาเพิ่มหนังสือก่อน")
     else:
         # ─── ตัวเลือก Sort ───
-        st.subheader("⚙️ ตัวเลือกการเรียงลำดับ")
+        st.subheader("ตัวเลือกการเรียงลำดับ")
         col1, col2, col3 = st.columns([2, 2, 1])
 
         with col1:
@@ -127,14 +127,14 @@ if page == "📚 หน้าแรก":
             sort_direction = st.selectbox(
                 "ทิศทาง",
                 options=["asc", "desc"],
-                format_func=lambda x: "น้อยไปมาก ↑" if x == "asc" else "มากไปน้อย ↓",
+                format_func=lambda x: "น้อยไปมาก" if x == "asc" else "มากไปน้อย",
                 key="home_sort_dir",
             )
 
         with col3:
             st.write("")  # spacer
             st.write("")  # spacer
-            do_sort = st.button("🔀 เรียงลำดับ", key="btn_sort_home", use_container_width=True)
+            st.button("เรียงลำดับ", key="btn_sort_home", use_container_width=True)
 
         # เรียงและแสดงผล
         reverse = sort_direction == "desc"
@@ -145,7 +145,7 @@ if page == "📚 หน้าแรก":
         # แสดง Algorithm ที่ใช้ (ตาม Success Criteria ข้อ 2 ของ PRD)
         key_label = "ปีที่พิมพ์" if sort_key == "year" else "ชื่อผู้แต่ง"
         dir_label = "มากไปน้อย" if reverse else "น้อยไปมาก"
-        st.caption(f"🔧 Algorithm: **{algo_used}** | เรียงตาม: **{key_label}** ({dir_label})")
+        st.caption(f"Algorithm: **{algo_used}** | เรียงตาม: **{key_label}** ({dir_label})")
 
         # เพิ่มเลขลำดับก่อนแสดง
         display_data = []
@@ -156,15 +156,15 @@ if page == "📚 หน้าแรก":
 
         # แสดงใน dataframe ตาม PRD Section 4.4
         st.dataframe(display_data, use_container_width=True)
-        st.caption(f"📖 จำนวนหนังสือทั้งหมด: **{len(sorted_books)} เล่ม**")
+        st.caption(f"จำนวนหนังสือทั้งหมด: **{len(sorted_books)} เล่ม**")
 
 
 # ===================================================
 # ============  PAGE 2: เพิ่มหนังสือ  ===============
 # ===================================================
 
-elif page == "➕ เพิ่มหนังสือ":
-    st.title("➕ เพิ่มหนังสือใหม่")
+elif page == "เพิ่มหนังสือ":
+    st.title("เพิ่มหนังสือใหม่")
     st.markdown("กรอกข้อมูลให้ครบทุกช่อง (ทุก field จำเป็น)")
 
     # ─── ฟอร์มกรอกข้อมูล ───
@@ -210,7 +210,7 @@ elif page == "➕ เพิ่มหนังสือ":
             )
 
         # ปุ่ม Submit
-        submitted = st.form_submit_button("💾 บันทึก", use_container_width=True)
+        submitted = st.form_submit_button("บันทึก", use_container_width=True)
 
     # ─── ประมวลผลหลัง Submit ───
     if submitted:
@@ -218,31 +218,46 @@ elif page == "➕ เพิ่มหนังสือ":
         success, message = manager.add_book(new_book)
 
         if success:
-            st.success(f"✅ {message}")
+            st.success(message)
         else:
-            st.error(f"❌ {message}")
+            st.error(message)
 
 
 # ===================================================
 # ============  PAGE 3: แก้ไข / ลบ  ================
 # ===================================================
 
-elif page == "✏️ แก้ไข / ลบ":
-    st.title("✏️ แก้ไข / ลบ หนังสือ")
+elif page == "แก้ไข / ลบ":
+    st.title("แก้ไข / ลบ หนังสือ")
 
     all_books = manager.get_all()
 
     if not all_books:
         st.info("ยังไม่มีหนังสือในระบบ")
     else:
-        # Dropdown เลือกหนังสือ — แสดงในรูปแบบ "ชื่อ (ISBN)"
+        # ─── ตารางแสดงหนังสือทั้งหมด (ดูก่อนเลือก) ───
+        st.subheader("รายการหนังสือทั้งหมด")
+
+        # เพิ่มเลขลำดับ
+        display_all = []
+        for idx, book in enumerate(all_books, start=1):
+            row = {"#": idx}
+            row.update(book)
+            display_all.append(row)
+
+        st.dataframe(display_all, use_container_width=True)
+        st.caption(f"จำนวนหนังสือทั้งหมด: **{len(all_books)} เล่ม**")
+
+        st.markdown("---")
+
+        # ─── Dropdown เลือกหนังสือที่จะแก้ไข/ลบ ───
         # ใช้ Sequential Search ดึงข้อมูลมาแสดงใน form ตาม PRD Section 4.1 Update
         book_options = {
             f"{b['title']} ({b['isbn']})": b["isbn"] for b in all_books
         }
 
         selected_label = st.selectbox(
-            "เลือกหนังสือ",
+            "เลือกหนังสือที่ต้องการแก้ไข / ลบ",
             options=list(book_options.keys()),
             key="edit_select",
         )
@@ -259,7 +274,7 @@ elif page == "✏️ แก้ไข / ลบ":
             st.markdown("---")
 
             # ─── แท็บแก้ไข / ลบ ───
-            tab_edit, tab_delete = st.tabs(["✏️ แก้ไข", "🗑️ ลบ"])
+            tab_edit, tab_delete = st.tabs(["แก้ไข", "ลบ"])
 
             # ── แท็บแก้ไข ──
             with tab_edit:
@@ -301,7 +316,7 @@ elif page == "✏️ แก้ไข / ลบ":
                             value=selected_book["category"],
                         )
 
-                    save_btn = st.form_submit_button("💾 บันทึกการแก้ไข", use_container_width=True)
+                    save_btn = st.form_submit_button("บันทึกการแก้ไข", use_container_width=True)
 
                 if save_btn:
                     success, message = manager.update_book(
@@ -313,16 +328,16 @@ elif page == "✏️ แก้ไข / ลบ":
                         category=new_category,
                     )
                     if success:
-                        st.success(f"✅ {message}")
+                        st.success(message)
                         st.rerun()  # รีโหลดหน้าเพื่อแสดงข้อมูลใหม่
                     else:
-                        st.error(f"❌ {message}")
+                        st.error(message)
 
             # ── แท็บลบ ──
             with tab_delete:
                 st.subheader(f"ลบ: {selected_book['title']}")
                 st.warning(
-                    f"⚠️ คุณกำลังจะลบหนังสือ **'{selected_book['title']}'** "
+                    f"คุณกำลังจะลบหนังสือ **'{selected_book['title']}'** "
                     f"(ISBN: {selected_book['isbn']}) — การดำเนินการนี้ไม่สามารถยกเลิกได้"
                 )
 
@@ -334,25 +349,25 @@ elif page == "✏️ แก้ไข / ลบ":
 
                 # ปุ่มลบ — ใช้งานได้เมื่อกด Confirm เท่านั้น
                 if st.button(
-                    "🗑️ ยืนยันการลบ",
+                    "ยืนยันการลบ",
                     disabled=not confirm,
                     use_container_width=True,
                     type="primary",
                 ):
                     success, message = manager.delete_book(selected_isbn)
                     if success:
-                        st.success(f"✅ {message}")
+                        st.success(message)
                         st.rerun()  # รีโหลดหน้าหลังลบ
                     else:
-                        st.error(f"❌ {message}")
+                        st.error(message)
 
 
 # ===================================================
 # ============  PAGE 4: ค้นหา  =====================
 # ===================================================
 
-elif page == "🔍 ค้นหา":
-    st.title("🔍 ค้นหาหนังสือ")
+elif page == "ค้นหา":
+    st.title("ค้นหาหนังสือ")
 
     # เลือกประเภทการค้นหา
     search_type = st.radio(
@@ -365,7 +380,7 @@ elif page == "🔍 ค้นหา":
 
     # ─── Binary Search ด้วย ISBN ───
     if search_type == "ISBN (Binary Search)":
-        st.subheader("🔍 ค้นหาด้วย ISBN")
+        st.subheader("ค้นหาด้วย ISBN")
         st.caption("Algorithm: **Binary Search** | ต้องการ List ที่เรียง ISBN ก่อน")
 
         isbn_query = st.text_input(
@@ -374,7 +389,7 @@ elif page == "🔍 ค้นหา":
             key="isbn_search_input",
         )
 
-        if st.button("🔍 ค้นหา", key="btn_isbn_search"):
+        if st.button("ค้นหา", key="btn_isbn_search"):
             if not isbn_query.strip():
                 st.warning("กรุณากรอก ISBN ก่อนค้นหา")
             else:
@@ -385,14 +400,14 @@ elif page == "🔍 ค้นหา":
                 result = binary_search(sorted_by_isbn, isbn_query.strip())
 
                 if result:
-                    st.success(f"✅ พบ 1 รายการ")
+                    st.success("พบ 1 รายการ")
                     st.dataframe([result], use_container_width=True)
                 else:
-                    st.error(f"❌ ไม่พบ ISBN '{isbn_query}' ในระบบ")
+                    st.error(f"ไม่พบ ISBN '{isbn_query}' ในระบบ")
 
     # ─── Sequential Search ด้วยชื่อ ───
     else:
-        st.subheader("🔍 ค้นหาด้วยชื่อหนังสือ")
+        st.subheader("ค้นหาด้วยชื่อหนังสือ")
         st.caption("Algorithm: **Sequential Search** | รองรับการค้นหาแบบ Partial match")
 
         title_query = st.text_input(
@@ -401,7 +416,7 @@ elif page == "🔍 ค้นหา":
             key="title_search_input",
         )
 
-        if st.button("🔍 ค้นหา", key="btn_title_search"):
+        if st.button("ค้นหา", key="btn_title_search"):
             if not title_query.strip():
                 st.warning("กรุณากรอกคำค้นหาก่อน")
             else:
@@ -411,7 +426,7 @@ elif page == "🔍 ค้นหา":
                 results = sequential_search(all_books, title_query.strip())
 
                 if results:
-                    st.success(f"✅ พบ {len(results)} รายการ")
+                    st.success(f"พบ {len(results)} รายการ")
                     st.dataframe(results, use_container_width=True)
                 else:
-                    st.info(f"ℹ️ ไม่พบหนังสือที่มีชื่อตรงกับ '{title_query}'")
+                    st.info(f"ไม่พบหนังสือที่มีชื่อตรงกับ '{title_query}'")
