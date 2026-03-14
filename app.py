@@ -79,6 +79,63 @@ def get_books_sorted_by_isbn() -> list:
     return merge_sort(all_books, "isbn", reverse=False)
 
 
+# ===== Helper: Pagination =====
+
+ROWS_PER_PAGE = 10  # จำนวนแถวต่อหน้า
+
+def paginate(data: list, page_key: str) -> list:
+    """
+    แบ่งข้อมูลออกเป็นหน้าๆ ละ ROWS_PER_PAGE แถว
+    ใช้ st.session_state เก็บ current page เพื่อไม่ reset เมื่อ rerun
+
+    Args:
+        data     (list): List ข้อมูลทั้งหมด
+        page_key (str) : key ใน session_state สำหรับเก็บหน้าปัจจุบัน
+
+    Returns:
+        list: ข้อมูลเฉพาะหน้าปัจจุบัน
+    """
+    total = len(data)
+    # คำนวณจำนวนหน้าทั้งหมด (ปัดขึ้นเสมอ)
+    total_pages = max(1, (total + ROWS_PER_PAGE - 1) // ROWS_PER_PAGE)
+
+    # กำหนดค่าเริ่มต้น หรือ clamp ถ้าข้อมูลลดลงจนหน้าเกิน
+    if page_key not in st.session_state:
+        st.session_state[page_key] = 1
+    st.session_state[page_key] = min(st.session_state[page_key], total_pages)
+
+    current_page = st.session_state[page_key]
+
+    # แสดง navigation และข้อมูล pagination เฉพาะเมื่อมีมากกว่า 1 หน้า
+    if total_pages > 1:
+        col_prev, col_info, col_next = st.columns([1, 3, 1])
+
+        with col_prev:
+            if st.button("ก่อนหน้า", key=f"{page_key}_prev",
+                         disabled=(current_page == 1)):
+                st.session_state[page_key] -= 1
+                st.rerun()
+
+        with col_info:
+            st.markdown(
+                f"<div style='text-align:center; padding-top:6px;'>"
+                f"หน้า <strong>{current_page}</strong> / {total_pages} "
+                f"(ทั้งหมด {total} รายการ)</div>",
+                unsafe_allow_html=True,
+            )
+
+        with col_next:
+            if st.button("ถัดไป", key=f"{page_key}_next",
+                         disabled=(current_page == total_pages)):
+                st.session_state[page_key] += 1
+                st.rerun()
+
+    # คำนวณ slice ของข้อมูลหน้าปัจจุบัน
+    start = (current_page - 1) * ROWS_PER_PAGE
+    end = start + ROWS_PER_PAGE
+    return data[start:end]
+
+
 # ===================================================
 # ==================  SIDEBAR  =====================
 # ===================================================
@@ -154,8 +211,10 @@ if page == "หน้าแรก":
             row.update(book)
             display_data.append(row)
 
-        # แสดงใน dataframe ตาม PRD Section 4.4
-        st.dataframe(display_data, use_container_width=True)
+        # แบ่งหน้าและแสดง dataframe ตาม PRD Section 4.4
+        # paginate() จะแสดงปุ่มนำทางให้อัตโนมัติเมื่อข้อมูล > 10 แถว
+        page_data = paginate(display_data, page_key="home_page")
+        st.dataframe(page_data, use_container_width=True)
         st.caption(f"จำนวนหนังสือทั้งหมด: **{len(sorted_books)} เล่ม**")
 
 
@@ -235,21 +294,6 @@ elif page == "แก้ไข / ลบ":
     if not all_books:
         st.info("ยังไม่มีหนังสือในระบบ")
     else:
-        # ─── ตารางแสดงหนังสือทั้งหมด (ดูก่อนเลือก) ───
-        st.subheader("รายการหนังสือทั้งหมด")
-
-        # เพิ่มเลขลำดับ
-        display_all = []
-        for idx, book in enumerate(all_books, start=1):
-            row = {"#": idx}
-            row.update(book)
-            display_all.append(row)
-
-        st.dataframe(display_all, use_container_width=True)
-        st.caption(f"จำนวนหนังสือทั้งหมด: **{len(all_books)} เล่ม**")
-
-        st.markdown("---")
-
         # ─── Dropdown เลือกหนังสือที่จะแก้ไข/ลบ ───
         # ใช้ Sequential Search ดึงข้อมูลมาแสดงใน form ตาม PRD Section 4.1 Update
         book_options = {
